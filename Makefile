@@ -1,78 +1,70 @@
-PYTHON_NAME = python
-PIP_NAME = pip
-VIRTUAL_ENVIRONMENT_NAME = .venv
-ENTRY_POINT_START = main.py
-REQUIREMENTS_FILE_NAME = requirements.txt
-#
-CUSTOMIZE_EXECUTABLE_COMMAND = \
-	echo 'run command 1' \
-	echo 'run command 2' \
+# Configurable Variables
+PYTHON_NAME := python
+VENV_NAME := .venv
+ENTRY_POINT_NAME := main
+REQUIREMENTS_FILE_NAME := requirements
 
+# VENV Paths
+VENV_PATH_WINDOWS := $(VENV_NAME)\Scripts
+VENV_PATH_UNIX := $(VENV_NAME)/bin
 
-### Execute Customize Command
-execute_command:
-	$(CUSTOMIZE_EXECUTABLE_COMMAND)
+# Execute Custom Commands
+execute_custom:
+	echo 'run command 1'; \
+	echo 'run command 2';
 
+# Setup VENV
+setup_venv:
+ifeq ($(OS),Windows_NT)
+	if not exist $(VENV_NAME) $(PYTHON_NAME) -m venv $(VENV_NAME) && \
+	$(VENV_PATH_WINDOWS)\python -m pip install --upgrade pip && \
+	$(VENV_PATH_WINDOWS)\pip install pipdeptree
+else
+	test -d $(VENV_NAME) || $(PYTHON_NAME) -m venv $(VENV_NAME) && \
+	$(VENV_PATH_UNIX)/python -m pip install --upgrade pip && \
+	$(VENV_PATH_UNIX)/pip install pipdeptree
+endif
 
-### Setup Virtual Environment
-windows_setup:
-	if not exist $(VIRTUAL_ENVIRONMENT_NAME) \
-	$(PYTHON_NAME) --version && $(PYTHON_NAME) -m venv $(VIRTUAL_ENVIRONMENT_NAME)
-#
-unix_setup:
-	test -d $(VIRTUAL_ENVIRONMENT_NAME) || \
-	$(PYTHON_NAME) --version && $(PYTHON_NAME) -m venv $(VIRTUAL_ENVIRONMENT_NAME)
+# Install Requirements
+install_packages: setup_venv
+ifeq ($(OS),Windows_NT)
+	$(VENV_PATH_WINDOWS)\pip install -r $(REQUIREMENTS_FILE_NAME).txt && \
+	$(VENV_PATH_WINDOWS)\python -m pipdeptree && \
+	$(VENV_PATH_WINDOWS)\python -m pipdeptree > $(REQUIREMENTS_FILE_NAME)-pipdeptree.txt
+else
+	$(VENV_PATH_UNIX)/pip install -r $(REQUIREMENTS_FILE_NAME).txt && \
+	$(VENV_PATH_UNIX)/python -m pipdeptree && \
+	$(VENV_PATH_UNIX)/python -m pipdeptree > $(REQUIREMENTS_FILE_NAME)-pipdeptree.txt
+endif
 
+# Show Installed Packages
+show_packages: setup_venv
+ifeq ($(OS),Windows_NT)
+	$(VENV_PATH_WINDOWS)\python -m pipdeptree
+else
+	$(VENV_PATH_UNIX)/python -m pipdeptree
+endif
 
-### Install Requirements Packages
-windows_install:
-	if exist $(VIRTUAL_ENVIRONMENT_NAME) \
-	$(VIRTUAL_ENVIRONMENT_NAME)\Scripts\$(PYTHON_NAME) -m pip install --upgrade pip && \
-	$(VIRTUAL_ENVIRONMENT_NAME)\Scripts\$(PIP_NAME) install -r $(REQUIREMENTS_FILE_NAME) && \
-	$(VIRTUAL_ENVIRONMENT_NAME)\Scripts\$(PYTHON_NAME) -m pipdeptree
-#
-unix_install:
-	test -d $(VIRTUAL_ENVIRONMENT_NAME) && \
-	$(VIRTUAL_ENVIRONMENT_NAME)/bin/$(PYTHON_NAME) -m pip install --upgrade pip && \
-	$(VIRTUAL_ENVIRONMENT_NAME)/bin/$(PIP_NAME) install -r $(REQUIREMENTS_FILE_NAME) && \
-	$(VIRTUAL_ENVIRONMENT_NAME)/bin/$(PYTHON_NAME) -m pipdeptree
+# Run Service
+run_service: setup_venv
+ifeq ($(OS),Windows_NT)
+	$(VENV_PATH_WINDOWS)\python $(ENTRY_POINT_NAME).py
+else
+	$(VENV_PATH_UNIX)/python $(ENTRY_POINT_NAME).py
+endif
 
+# Debug Service
+debug_service: setup_venv
+ifeq ($(OS),Windows_NT)
+	$(VENV_PATH_WINDOWS)\python -m pdb $(ENTRY_POINT_NAME).py
+else
+	$(VENV_PATH_UNIX)/python -m pdb $(ENTRY_POINT_NAME).py
+endif
 
-### Show Installed Packages
-windows_show_packages:
-	if exist $(VIRTUAL_ENVIRONMENT_NAME) \
-	$(VIRTUAL_ENVIRONMENT_NAME)\Scripts\$(PYTHON_NAME) -m pipdeptree
-#
-unix_show_packages:
-	test -d $(VIRTUAL_ENVIRONMENT_NAME) && \
-	$(VIRTUAL_ENVIRONMENT_NAME)/bin/$(PYTHON_NAME) -m pipdeptree
-
-
-### Run Current Service
-windows_run:
-	if exist $(VIRTUAL_ENVIRONMENT_NAME) \
-	$(VIRTUAL_ENVIRONMENT_NAME)\Scripts\$(PYTHON_NAME) $(ENTRY_POINT_START)
-#
-unix_run:
-	test -d $(VIRTUAL_ENVIRONMENT_NAME) && \
-	$(VIRTUAL_ENVIRONMENT_NAME)/bin/$(PYTHON_NAME) $(ENTRY_POINT_START)
-
-
-### Debug Current Service
-windows_debug:
-	if exist $(VIRTUAL_ENVIRONMENT_NAME) \
-	$(VIRTUAL_ENVIRONMENT_NAME)\Scripts\$(PYTHON_NAME) -m pdb $(ENTRY_POINT_START)
-#
-unix_debug:
-	test -d $(VIRTUAL_ENVIRONMENT_NAME) && \
-	$(VIRTUAL_ENVIRONMENT_NAME)/bin/$(PYTHON_NAME) -m pdb $(ENTRY_POINT_START)
-
-
-### Uninstall Virtual Environment
-windows_uninstall:
-	if exist $(VIRTUAL_ENVIRONMENT_NAME) \
-	rmdir /s /q $(VIRTUAL_ENVIRONMENT_NAME)
-#
-unix_uninstall:
-	test -d $(VIRTUAL_ENVIRONMENT_NAME) && \
-	rm -rf $(VIRTUAL_ENVIRONMENT_NAME)
+# Uninstall Virtual Environment
+clean_venv:
+ifeq ($(OS),Windows_NT)
+	if exist $(VENV_NAME) rmdir /s /q $(VENV_NAME)
+else
+	test -d $(VENV_NAME) && rm -rf $(VENV_NAME)
+endif
