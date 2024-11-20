@@ -45,22 +45,6 @@ else
 	$(VENV_PATH_UNIX)/python -m pipdeptree
 endif
 
-# Run Service
-run_service: setup_venv
-ifeq ($(OS),Windows_NT)
-	$(VENV_PATH_WINDOWS)\python $(ENTRY_POINT_NAME).py
-else
-	$(VENV_PATH_UNIX)/python $(ENTRY_POINT_NAME).py
-endif
-
-# Debug Service
-debug_service: setup_venv
-ifeq ($(OS),Windows_NT)
-	$(VENV_PATH_WINDOWS)\python -m pdb $(ENTRY_POINT_NAME).py
-else
-	$(VENV_PATH_UNIX)/python -m pdb $(ENTRY_POINT_NAME).py
-endif
-
 # Uninstall Virtual Environment
 clean_venv:
 ifeq ($(OS),Windows_NT)
