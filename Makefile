@@ -10,7 +10,7 @@ VENV_PATH_UNIX := $(VENV_NAME)/bin
 
 # Execute Custom Commands
 execute_custom:
-	echo 'run command 1'; \
+	echo 'run command 1';
 	echo 'run command 2';
 
 # Setup VENV
@@ -29,10 +29,12 @@ endif
 install_packages: setup_venv
 ifeq ($(OS),Windows_NT)
 	$(VENV_PATH_WINDOWS)\pip install -r $(REQUIREMENTS_FILE_NAME).txt && \
+	$(VENV_PATH_WINDOWS)\pip freeze > $(REQUIREMENTS_FILE_NAME)-lock.txt && \
 	$(VENV_PATH_WINDOWS)\python -m pipdeptree && \
 	$(VENV_PATH_WINDOWS)\python -m pipdeptree > $(REQUIREMENTS_FILE_NAME)-pipdeptree.txt
 else
 	$(VENV_PATH_UNIX)/pip install -r $(REQUIREMENTS_FILE_NAME).txt && \
+	$(VENV_PATH_UNIX)/pip freeze > $(REQUIREMENTS_FILE_NAME)-lock.txt && \
 	$(VENV_PATH_UNIX)/python -m pipdeptree && \
 	$(VENV_PATH_UNIX)/python -m pipdeptree > $(REQUIREMENTS_FILE_NAME)-pipdeptree.txt
 endif
@@ -49,6 +51,13 @@ endif
 clean_venv:
 ifeq ($(OS),Windows_NT)
 	if exist $(VENV_NAME) rmdir /s /q $(VENV_NAME)
+	if exist $(REQUIREMENTS_FILE_NAME)-lock.txt del /q $(REQUIREMENTS_FILE_NAME)-lock.txt
+	if exist $(REQUIREMENTS_FILE_NAME)-pipdeptree.txt del /q $(REQUIREMENTS_FILE_NAME)-pipdeptree.txt
 else
 	test -d $(VENV_NAME) && rm -rf $(VENV_NAME)
+	test -f $(REQUIREMENTS_FILE_NAME)-lock.txt && rm -f $(REQUIREMENTS_FILE_NAME)-lock.txt
+	test -f $(REQUIREMENTS_FILE_NAME)-pipdeptree.txt && rm -f $(REQUIREMENTS_FILE_NAME)-pipdeptree.txt
 endif
+
+# Uninstall Virtual Environment and Install Requirements
+clean_install_packages: clean_venv install_packages
